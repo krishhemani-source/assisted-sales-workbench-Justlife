@@ -1,0 +1,602 @@
+[
+  {
+    "id": "L-001",
+    "lead_source": "whatsapp_inbound",
+    "service": "salon_at_home",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 260,
+    "hours_since_dropoff": 43,
+    "past_bookings": 1,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-002",
+    "lead_source": "browse_abandon",
+    "service": "salon_at_home",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 330,
+    "hours_since_dropoff": 92.5,
+    "past_bookings": 3,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-003",
+    "lead_source": "browse_abandon",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 155,
+    "hours_since_dropoff": 62,
+    "past_bookings": 2,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-004",
+    "lead_source": "checkout_dropoff",
+    "service": "packing_moving",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 2350,
+    "hours_since_dropoff": 45.5,
+    "past_bookings": 0,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-005",
+    "lead_source": "whatsapp_inbound",
+    "service": "packing_moving",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 3000,
+    "hours_since_dropoff": 5,
+    "past_bookings": 0,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-006",
+    "lead_source": "checkout_dropoff",
+    "service": "deep_cleaning",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 390,
+    "hours_since_dropoff": 44.5,
+    "past_bookings": 4,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-007",
+    "lead_source": "whatsapp_inbound",
+    "service": "salon_at_home",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 315,
+    "hours_since_dropoff": 7,
+    "past_bookings": 3,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-008",
+    "lead_source": "checkout_dropoff",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 270,
+    "hours_since_dropoff": 7,
+    "past_bookings": 10,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-009",
+    "lead_source": "call_me_back",
+    "service": "salon_at_home",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 405,
+    "hours_since_dropoff": 4.5,
+    "past_bookings": 6,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-010",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 205,
+    "hours_since_dropoff": 14,
+    "past_bookings": 12,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-011",
+    "lead_source": "whatsapp_inbound",
+    "service": "pest_control",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 480,
+    "hours_since_dropoff": 32.5,
+    "past_bookings": 1,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-012",
+    "lead_source": "checkout_dropoff",
+    "service": "deep_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 400,
+    "hours_since_dropoff": 50.5,
+    "past_bookings": 0,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-013",
+    "lead_source": "whatsapp_inbound",
+    "service": "home_cleaning",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 155,
+    "hours_since_dropoff": 37,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-014",
+    "lead_source": "browse_abandon",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 215,
+    "hours_since_dropoff": 110,
+    "past_bookings": 5,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-015",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 140,
+    "hours_since_dropoff": 48,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-016",
+    "lead_source": "checkout_dropoff",
+    "service": "packing_moving",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 3350,
+    "hours_since_dropoff": 39,
+    "past_bookings": 0,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-017",
+    "lead_source": "browse_abandon",
+    "service": "salon_at_home",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 380,
+    "hours_since_dropoff": 80,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-018",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 120,
+    "hours_since_dropoff": 17.5,
+    "past_bookings": 12,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-019",
+    "lead_source": "whatsapp_inbound",
+    "service": "pest_control",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 460,
+    "hours_since_dropoff": 12,
+    "past_bookings": 1,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-020",
+    "lead_source": "call_me_back",
+    "service": "salon_at_home",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 215,
+    "hours_since_dropoff": 3.5,
+    "past_bookings": 4,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-021",
+    "lead_source": "call_me_back",
+    "service": "home_cleaning",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 230,
+    "hours_since_dropoff": 2.5,
+    "past_bookings": 1,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-022",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 285,
+    "hours_since_dropoff": 2,
+    "past_bookings": 11,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-023",
+    "lead_source": "call_me_back",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 200,
+    "hours_since_dropoff": 6,
+    "past_bookings": 2,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-024",
+    "lead_source": "browse_abandon",
+    "service": "pest_control",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 430,
+    "hours_since_dropoff": 27.5,
+    "past_bookings": 0,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-025",
+    "lead_source": "browse_abandon",
+    "service": "deep_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 370,
+    "hours_since_dropoff": 6.5,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-026",
+    "lead_source": "call_me_back",
+    "service": "pest_control",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 515,
+    "hours_since_dropoff": 5,
+    "past_bookings": 1,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-027",
+    "lead_source": "browse_abandon",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 175,
+    "hours_since_dropoff": 30.5,
+    "past_bookings": 5,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-028",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 225,
+    "hours_since_dropoff": 3.5,
+    "past_bookings": 12,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-029",
+    "lead_source": "whatsapp_inbound",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 210,
+    "hours_since_dropoff": 12,
+    "past_bookings": 10,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-030",
+    "lead_source": "whatsapp_inbound",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 130,
+    "hours_since_dropoff": 14,
+    "past_bookings": 2,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-031",
+    "lead_source": "whatsapp_inbound",
+    "service": "salon_at_home",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 210,
+    "hours_since_dropoff": 41.5,
+    "past_bookings": 1,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-032",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 165,
+    "hours_since_dropoff": 41.5,
+    "past_bookings": 2,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-033",
+    "lead_source": "browse_abandon",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 205,
+    "hours_since_dropoff": 110,
+    "past_bookings": 2,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-034",
+    "lead_source": "browse_abandon",
+    "service": "home_cleaning",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 300,
+    "hours_since_dropoff": 113,
+    "past_bookings": 2,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-035",
+    "lead_source": "checkout_dropoff",
+    "service": "deep_cleaning",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 420,
+    "hours_since_dropoff": 69,
+    "past_bookings": 3,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-036",
+    "lead_source": "browse_abandon",
+    "service": "salon_at_home",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 240,
+    "hours_since_dropoff": 97,
+    "past_bookings": 5,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-037",
+    "lead_source": "browse_abandon",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 270,
+    "hours_since_dropoff": 27,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-038",
+    "lead_source": "checkout_dropoff",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 240,
+    "hours_since_dropoff": 1,
+    "past_bookings": 12,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-039",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 150,
+    "hours_since_dropoff": 3.5,
+    "past_bookings": 6,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-040",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 260,
+    "hours_since_dropoff": 18,
+    "past_bookings": 2,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-041",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 200,
+    "hours_since_dropoff": 9,
+    "past_bookings": 1,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-042",
+    "lead_source": "checkout_dropoff",
+    "service": "deep_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 365,
+    "hours_since_dropoff": 44.5,
+    "past_bookings": 2,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-043",
+    "lead_source": "call_me_back",
+    "service": "pest_control",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 475,
+    "hours_since_dropoff": 1,
+    "past_bookings": 1,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-044",
+    "lead_source": "whatsapp_inbound",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 210,
+    "hours_since_dropoff": 17.5,
+    "past_bookings": 11,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-045",
+    "lead_source": "whatsapp_inbound",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 315,
+    "hours_since_dropoff": 1,
+    "past_bookings": 8,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-046",
+    "lead_source": "browse_abandon",
+    "service": "deep_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 470,
+    "hours_since_dropoff": 37,
+    "past_bookings": 0,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-047",
+    "lead_source": "whatsapp_inbound",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 175,
+    "hours_since_dropoff": 11,
+    "past_bookings": 1,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-048",
+    "lead_source": "whatsapp_inbound",
+    "service": "deep_cleaning",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 480,
+    "hours_since_dropoff": 4,
+    "past_bookings": 0,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-049",
+    "lead_source": "browse_abandon",
+    "service": "packing_moving",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 2300,
+    "hours_since_dropoff": 31.5,
+    "past_bookings": 0,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-050",
+    "lead_source": "checkout_dropoff",
+    "service": "deep_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 425,
+    "hours_since_dropoff": 36,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-051",
+    "lead_source": "whatsapp_inbound",
+    "service": "deep_cleaning",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 515,
+    "hours_since_dropoff": 2.5,
+    "past_bookings": 0,
+    "city": "Sharjah"
+  },
+  {
+    "id": "L-052",
+    "lead_source": "browse_abandon",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 195,
+    "hours_since_dropoff": 36.5,
+    "past_bookings": 5,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-053",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 170,
+    "hours_since_dropoff": 4.5,
+    "past_bookings": 9,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-054",
+    "lead_source": "call_me_back",
+    "service": "packing_moving",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 950,
+    "hours_since_dropoff": 1,
+    "past_bookings": 4,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-055",
+    "lead_source": "checkout_dropoff",
+    "service": "pest_control",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 660,
+    "hours_since_dropoff": 26,
+    "past_bookings": 1,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-056",
+    "lead_source": "whatsapp_inbound",
+    "service": "salon_at_home",
+    "drop_off_step": "scheduling",
+    "basket_value_aed": 170,
+    "hours_since_dropoff": 39,
+    "past_bookings": 2,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-057",
+    "lead_source": "checkout_dropoff",
+    "service": "home_cleaning",
+    "drop_off_step": "payment",
+    "basket_value_aed": 300,
+    "hours_since_dropoff": 13,
+    "past_bookings": 9,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-058",
+    "lead_source": "checkout_dropoff",
+    "service": "salon_at_home",
+    "drop_off_step": "payment",
+    "basket_value_aed": 190,
+    "hours_since_dropoff": 20,
+    "past_bookings": 10,
+    "city": "Abu Dhabi"
+  },
+  {
+    "id": "L-059",
+    "lead_source": "call_me_back",
+    "service": "home_cleaning",
+    "drop_off_step": "pricing",
+    "basket_value_aed": 170,
+    "hours_since_dropoff": 2.5,
+    "past_bookings": 3,
+    "city": "Dubai"
+  },
+  {
+    "id": "L-060",
+    "lead_source": "browse_abandon",
+    "service": "packing_moving",
+    "drop_off_step": "service_selection",
+    "basket_value_aed": 3700,
+    "hours_since_dropoff": 36.5,
+    "past_bookings": 0,
+    "city": "Abu Dhabi"
+  }
+]
