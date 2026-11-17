@@ -4,93 +4,95 @@ import { ChevronDown } from "lucide-react";
 import { useId, useState, type ReactNode } from "react";
 import type { Verdict } from "@/lib/experiments";
 import type { FinalAction } from "@/lib/types";
+import { useAnimatedNumber } from "./motion";
 
 export function cn(...xs: (string | false | null | undefined)[]) {
   return xs.filter(Boolean).join(" ");
 }
 
-/** One accent (deep green). Amber = ITERATE / caution. Red = breached guardrail / KILL only. */
+/* ------------------------------------------------------------------ */
+/* Actions & verdicts                                                  */
+/* ------------------------------------------------------------------ */
+
 export const ACTION_META: Record<FinalAction, { label: string; className: string }> = {
-  AGENT_CALL: { label: "Agent call", className: "bg-emerald-800 text-white ring-emerald-800" },
-  WHATSAPP_NUDGE: { label: "WhatsApp nudge", className: "bg-emerald-50 text-emerald-900 ring-emerald-200" },
-  LEAVE_TO_APP: { label: "Leave to app", className: "bg-white text-zinc-700 ring-zinc-300" },
-  HOLDOUT: { label: "Holdout · no contact", className: "bg-zinc-100 text-zinc-500 ring-zinc-200" },
+  AGENT_CALL: { label: "Agent call", className: "bg-agent text-white" },
+  WHATSAPP_NUDGE: { label: "WhatsApp nudge", className: "bg-agent-soft text-agent" },
+  LEAVE_TO_APP: { label: "Leave to app", className: "bg-surface text-ink-2 ring-1 ring-inset ring-rule" },
+  HOLDOUT: { label: "Holdout, no contact", className: "bg-canvas text-muted outline-1 -outline-offset-1 outline-dashed outline-anyway" },
 };
 
-export function ActionBadge({ action, className, size = "md" }: { action: FinalAction; className?: string; size?: "sm" | "md" }) {
+export function ActionBadge({ action, className }: { action: FinalAction; className?: string }) {
   const m = ACTION_META[action];
   return (
-    <span
-      className={cn(
-        "inline-flex items-center whitespace-nowrap rounded-full font-medium ring-1 ring-inset",
-        size === "md" ? "px-2.5 py-1 text-xs" : "px-2 py-0.5 text-[11px]",
-        m.className,
-        className,
-      )}
-    >
+    <span className={cn("inline-flex items-center whitespace-nowrap rounded-[5px] px-2 py-1 text-[13px] font-medium leading-none", m.className, className)}>
       {m.label}
     </span>
   );
 }
 
-export const VERDICT_STYLE: Record<Verdict, { chip: string; card: string; label: string; text: string }> = {
-  SCALE: { chip: "bg-emerald-800 text-white ring-emerald-800", card: "bg-emerald-50 ring-emerald-200", label: "Scale", text: "text-emerald-900" },
-  ITERATE: { chip: "bg-amber-400 text-amber-950 ring-amber-400", card: "bg-amber-50 ring-amber-200", label: "Iterate", text: "text-amber-900" },
-  KILL: { chip: "bg-red-700 text-white ring-red-700", card: "bg-red-50 ring-red-200", label: "Kill", text: "text-red-900" },
+export const VERDICT_STYLE: Record<Verdict, { word: string; text: string; soft: string; rule: string }> = {
+  SCALE: { word: "Scale", text: "text-agent", soft: "bg-agent-soft", rule: "border-agent" },
+  ITERATE: { word: "Iterate", text: "text-iterate", soft: "bg-iterate-soft", rule: "border-iterate" },
+  KILL: { word: "Kill", text: "text-kill", soft: "bg-kill-soft", rule: "border-kill" },
 };
 
-export function Card({ children, className, id }: { children: ReactNode; className?: string; id?: string }) {
+/* ------------------------------------------------------------------ */
+/* Layout                                                              */
+/* ------------------------------------------------------------------ */
+
+export function SectionHeading({ id, title, children }: { id?: string; title: string; children?: ReactNode }) {
   return (
-    <div id={id} className={cn("rounded-2xl bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-zinc-950/[0.06]", className)}>
-      {children}
+    <div className="max-w-[68ch]">
+      <h2 id={id} className="text-[22px] font-semibold leading-tight tracking-[-0.01em] text-ink sm:text-[30px]">
+        {title}
+      </h2>
+      {children ? <p className="mt-2 text-[15px] leading-relaxed text-muted sm:text-[17px]">{children}</p> : null}
     </div>
   );
 }
 
-export function SectionLabel({ children }: { children: ReactNode }) {
-  return <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-500">{children}</div>;
-}
-
-export function Collapsible({
+/** A ruled disclosure row: no card, just a hairline and a chevron. */
+export function Disclosure({
   title,
-  subtitle,
+  summary,
   children,
   defaultOpen = false,
-  icon,
+  className,
 }: {
   title: string;
-  subtitle?: string;
+  summary?: ReactNode;
   children: ReactNode;
   defaultOpen?: boolean;
-  icon?: ReactNode;
+  className?: string;
 }) {
   const [open, setOpen] = useState(defaultOpen);
   const id = useId();
   return (
-    <Card>
+    <div className={cn("border-t border-rule", className)}>
       <button
         type="button"
         aria-expanded={open}
         aria-controls={id}
         onClick={() => setOpen((o) => !o)}
-        className="flex w-full items-center justify-between gap-4 rounded-2xl px-5 py-4 text-left hover:bg-zinc-50/70 sm:px-6"
+        className="group flex w-full items-center justify-between gap-4 py-4 text-left"
       >
-        <span className="flex min-w-0 items-start gap-3">
-          {icon ? <span className="mt-0.5 shrink-0 text-zinc-400">{icon}</span> : null}
-          <span className="min-w-0">
-            <span className="block text-sm font-semibold text-zinc-900">{title}</span>
-            {subtitle ? <span className="mt-0.5 block text-xs text-zinc-500">{subtitle}</span> : null}
-          </span>
+        <span className="min-w-0">
+          <span className="block text-[15px] font-semibold text-ink group-hover:text-agent">{title}</span>
+          {summary ? <span className="mt-0.5 block text-[13px] text-muted">{summary}</span> : null}
         </span>
-        <ChevronDown className={cn("h-4 w-4 shrink-0 text-zinc-400 transition-transform", open && "rotate-180")} aria-hidden />
+        <ChevronDown className={cn("h-4 w-4 shrink-0 text-muted transition-transform motion-reduce:transition-none", open && "rotate-180")} aria-hidden />
       </button>
       {open ? (
-        <div id={id} className="px-5 pb-5 sm:px-6 sm:pb-6">
+        <div id={id} className="pb-6">
           {children}
         </div>
       ) : null}
-    </Card>
+    </div>
   );
+}
+
+export function SubLabel({ children }: { children: ReactNode }) {
+  return <div className="text-[13px] font-semibold text-ink-2">{children}</div>;
 }
 
 export function Select<T extends string>({
@@ -106,11 +108,11 @@ export function Select<T extends string>({
 }) {
   return (
     <label className="flex min-w-0 flex-col gap-1">
-      <span className="text-xs font-medium text-zinc-500">{label}</span>
+      <span className="text-[13px] text-muted">{label}</span>
       <select
         value={value}
         onChange={(e) => onChange(e.target.value as T)}
-        className="h-9 rounded-lg border border-zinc-200 bg-white px-2.5 text-sm text-zinc-900 focus:border-emerald-700 focus:outline-none focus:ring-2 focus:ring-emerald-100"
+        className="h-9 w-full min-w-0 rounded-md border border-rule bg-surface px-2 text-[14px] text-ink focus:border-agent focus:outline-none sm:px-2.5"
       >
         {options.map((o) => (
           <option key={o.value} value={o.value}>
@@ -120,4 +122,10 @@ export function Select<T extends string>({
       </select>
     </label>
   );
+}
+
+/** A number that tweens to new values (instant under reduced motion). */
+export function AnimatedNumber({ value, format }: { value: number; format: (n: number) => string }) {
+  const v = useAnimatedNumber(value);
+  return <>{format(v)}</>;
 }

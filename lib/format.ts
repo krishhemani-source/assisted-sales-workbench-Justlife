@@ -34,49 +34,48 @@ export function evidenceLabel(p: number): Evidence {
   return { label: "Not enough evidence yet", tone: "weak" };
 }
 
-/** One sentence naming the deciding factor behind the verdict. */
+/** One or two plain sentences naming the deciding factor behind the verdict. */
 export function plainReason(r: ExperimentResults, x: ExperimentInputs): string {
+  const limit = `${VERDICT.scaleMaxCostToServePct}%`;
   if (r.verdict === "KILL") {
     const failed = r.guardrails.filter((g) => g.status === "fail");
-    const more = failed.length > 1 ? ` (${failed.length - 1} other guardrail${failed.length > 2 ? "s" : ""} also breached.)` : "";
+    const more = failed.length > 1 ? ` ${failed.length - 1} other guardrail${failed.length > 2 ? "s are" : " is"} also breached.` : "";
     const first = failed[0];
-    let s: string;
     switch (first?.key) {
       case "cost":
-        s =
-          r.costStatus === "no_gmv"
-            ? "Treatment did not beat control, so there are no extra bookings to pay for the contact cost."
-            : `Most of these customers would have booked anyway: ${aed(r.incrementalCost)} of contact cost created only ${aed(r.incrementalGmv)} of extra bookings (${pct(r.costToServePct ?? 0)} cost to serve, ceiling ${VERDICT.killMaxCostToServePct}%).`;
-        break;
+        if (r.costStatus === "no_gmv") {
+          return `Killed on cost, regardless of evidence. The treatment did not beat control, so there are no extra bookings to pay for the contact cost.${more}`;
+        }
+        return `Killed on cost, regardless of evidence. ${aed(r.incrementalCost)} of contact cost created only ${aed(r.incrementalGmv)} of extra bookings: ${pct(r.costToServePct ?? 0)} cost to serve against a ${limit} limit. Most of these customers would have booked anyway.${more}`;
       case "app":
-        s = `Contact is pulling customers away from the app: app conversion fell ${pct(r.appConvRelativeDropPct)} relative to holdout (limit ${pct(x.maxAppDropPct)}).`;
-        break;
+        return `Killed on a guardrail, regardless of evidence. App conversion fell ${pct(r.appConvRelativeDropPct)} relative to the holdout, beyond the ${pct(x.maxAppDropPct)} limit, so contact is pulling customers away from the app.${more}`;
       case "quality":
-        s = `Conversations are not good enough: quality ${x.quality.toFixed(1)} / 5 is below the ${x.qualityThreshold.toFixed(1)} bar.`;
-        break;
+        return `Killed on a guardrail, regardless of evidence. Conversation quality of ${x.quality.toFixed(1)} out of 5 is below the ${x.qualityThreshold.toFixed(1)} bar.${more}`;
       case "optout":
-        s = `Customers are pushing back: ${pct(x.optOutPct)} opted out or complained (limit ${pct(x.maxOptOutPct)}).`;
-        break;
+        return `Killed on a guardrail, regardless of evidence. ${pct(x.optOutPct)} of customers opted out or complained, above the ${pct(x.maxOptOutPct)} limit.${more}`;
       default:
-        s = "A guardrail is breached.";
+        return "Killed: a guardrail is breached.";
     }
-    return s + more;
   }
   if (r.verdict === "SCALE") {
-    const cost = r.costStatus === "net_saving" ? "while costing less than control" : `at ${pct(r.costToServePct ?? 0)} cost to serve`;
-    return `Agents created ${num1(r.incrementalBookings)} extra bookings (${aed(r.incrementalGmv)}) ${cost}, with strong evidence and every guardrail passing.`;
+    const cost =
+      r.costStatus === "net_saving"
+        ? "while costing less than the current process"
+        : `at ${pct(r.costToServePct ?? 0)} cost to serve, inside the ${limit} limit`;
+    return `Agents created ${num1(r.incrementalBookings)} extra bookings worth ${aed(r.incrementalGmv)} ${cost}. The evidence is strong and every guardrail passes.`;
   }
   // ITERATE
   const parts: string[] = [];
-  if (!r.significant) {
-    const ev = evidenceLabel(r.pValue).label.toLowerCase();
-    const need = r.sampleNeededPerArm !== null ? `; it needs about ${int(r.sampleNeededPerArm)} leads per arm to confirm` : "";
-    parts.push(`The lift is positive but there is ${ev.startsWith("promising") ? "only promising evidence" : "not enough evidence yet"}${need}`);
-  }
-  if (r.costStatus === "net_saving") parts.push("it already costs less than the control process");
+  if (r.costStatus === "net_saving") parts.push("It already costs less than the current process");
   if (r.costStatus === "pct" && (r.costToServePct ?? 0) > VERDICT.scaleMaxCostToServePct) {
-    parts.push(`cost to serve is ${pct(r.costToServePct ?? 0)}, so try a cheaper channel or fewer attempts`);
+    parts.push(
+      `Cost to serve is ${pct(r.costToServePct ?? 0)}, above the ${limit} limit but below the ${VERDICT.killMaxCostToServePct}% kill line, so try a cheaper channel or fewer attempts`,
+    );
   }
-  const s = parts.join(", and ");
-  return s.charAt(0).toUpperCase() + s.slice(1) + ".";
+  if (!r.significant) {
+    const ev = evidenceLabel(r.pValue).tone === "promising" ? "the evidence is promising but not yet strong" : "there is not enough evidence yet";
+    const need = r.sampleNeededPerArm !== null ? `; about ${int(r.sampleNeededPerArm)} leads per arm would settle it` : "";
+    parts.push(`${parts.length ? "but " : "The lift is positive but "}${ev}${need}`);
+  }
+  return parts.join(", ") + ".";
 }

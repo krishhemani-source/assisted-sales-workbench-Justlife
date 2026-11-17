@@ -46,7 +46,9 @@ const parse = (d: { agentCall: string; whatsapp: string }): Thresholds => ({
 
 /** All lead-scoring UI state, shared by the hero and the Lead Workbench. 60 leads: recomputing per render is instant. */
 export function useScoring() {
-  const [intentPct, setIntentPct] = useState(DEFAULT_INTENT_PCT);
+  const [intentPct, setIntentPctRaw] = useState(DEFAULT_INTENT_PCT);
+  /** Rows whose action changed on the latest weight change, for a one-off highlight. */
+  const [flash, setFlash] = useState<{ key: number; ids: ReadonlySet<string> }>({ key: 0, ids: new Set() });
   const [thresholdDraft, setThresholdDraft] = useState({
     agentCall: String(DEFAULT_THRESHOLDS.agentCall),
     whatsapp: String(DEFAULT_THRESHOLDS.whatsapp),
@@ -58,6 +60,15 @@ export function useScoring() {
   const thresholdsValid = validThresholds(parsed);
   const thresholds = thresholdsValid ? parsed : lastValid;
   const weights = weightsFromIntentPct(intentPct);
+
+  const setIntentPct = (next: number) => {
+    if (next === intentPct) return;
+    const before = scoreAll(weightsFromIntentPct(intentPct), thresholds);
+    const after = scoreAll(weightsFromIntentPct(next), thresholds);
+    const ids = new Set(after.filter((r, i) => r.finalAction !== before[i].finalAction).map((r) => r.lead.id));
+    setFlash((f) => ({ key: f.key + 1, ids }));
+    setIntentPctRaw(next);
+  };
 
   const baseline = scoreAll(weightsFromIntentPct(DEFAULT_INTENT_PCT), thresholds);
   const scored: ScoredLead[] = scoreAll(weights, thresholds).map((r, i) => ({ ...r, baselineAction: baseline[i].finalAction }));
@@ -85,6 +96,7 @@ export function useScoring() {
     onThreshold,
     reset,
     scored,
+    flash,
     actionFilter,
     setActionFilter,
     callsAtDefault: countCalls(DEFAULT_INTENT_PCT, thresholds),

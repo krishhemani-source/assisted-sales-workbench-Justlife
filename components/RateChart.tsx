@@ -12,25 +12,25 @@ export function RateChart({ treatment, control }: { treatment: number; control: 
     <div className="h-44 w-full" role="img" aria-label={`Booking rate: control ${control}%, treatment ${treatment}%`}>
       <ResponsiveContainer width="100%" height="100%" initialDimension={{ width: 320, height: 176 }}>
         <BarChart data={data} margin={{ top: 20, right: 8, bottom: 0, left: 0 }} barCategoryGap="30%">
-          <CartesianGrid vertical={false} stroke="#e4e4e7" strokeDasharray="2 4" />
-          <XAxis dataKey="arm" tickLine={false} axisLine={{ stroke: "#e4e4e7" }} tick={{ fontSize: 12, fill: "#52525b" }} />
+          <CartesianGrid vertical={false} stroke="#dce1de" strokeDasharray="2 4" />
+          <XAxis dataKey="arm" tickLine={false} axisLine={{ stroke: "#dce1de" }} tick={{ fontSize: 12, fill: "#3d4a46" }} />
           <YAxis
             domain={[0, Math.min(100, max)]}
             tickLine={false}
             axisLine={false}
-            tick={{ fontSize: 11, fill: "#a1a1aa" }}
+            tick={{ fontSize: 11, fill: "#5f6b67" }}
             tickFormatter={(v: number) => `${v}%`}
             width={44}
           />
           <Bar dataKey="rate" radius={[4, 4, 0, 0]} isAnimationActive={false} maxBarSize={72}>
             {data.map((d) => (
-              <Cell key={d.arm} fill={d.arm === "Treatment" ? "#065f46" : "#d4d4d8"} />
+              <Cell key={d.arm} fill={d.arm === "Treatment" ? "#0e5c49" : "#c8c1b6"} />
             ))}
             <LabelList
               dataKey="rate"
               position="top"
               formatter={(v: unknown) => `${Number(v).toFixed(1)}%`}
-              style={{ fontSize: 12, fontWeight: 600, fill: "#18181b" }}
+              style={{ fontSize: 12, fontWeight: 600, fill: "#15201d" }}
             />
           </Bar>
         </BarChart>

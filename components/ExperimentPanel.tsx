@@ -1,7 +1,7 @@
 "use client";
 
-import { AlertTriangle, CheckCircle2, ChevronDown, CircleAlert, RotateCcw, Sigma, XCircle } from "lucide-react";
-import { useState, type ReactNode } from "react";
+import { AlertTriangle, CheckCircle2, CircleAlert, RotateCcw, XCircle } from "lucide-react";
+import type { ReactNode } from "react";
 import { VERDICT } from "@/lib/config";
 import {
   FIELD_GROUPS,
@@ -16,26 +16,44 @@ import {
   type InputKey,
   type RawInputs,
 } from "@/lib/experiments";
-import { aed, evidenceLabel, int, num1, pct, plainReason, type Evidence } from "@/lib/format";
+import { aed, evidenceLabel, int, num1, pct, plainReason } from "@/lib/format";
 import { RateChart } from "./RateChart";
-import { Card, cn, SectionLabel, VERDICT_STYLE } from "./ui";
+import { SplitBar } from "./SplitBar";
+import { AnimatedNumber, cn, Disclosure, SubLabel, VERDICT_STYLE } from "./ui";
 
 /* ------------------------------------------------------------------ */
 /* Inputs                                                              */
 /* ------------------------------------------------------------------ */
 
-function Field({ spec, value, error, onChange, emphasise }: { spec: FieldSpec; value: string; error?: string; onChange: (v: string) => void; emphasise?: boolean }) {
+/** Turns the validator's terse error into an instruction that says what to type. */
+function fixMessage(spec: FieldSpec, error: string): string {
+  if (error === "Enter a number") return `Enter a number for ${spec.label.toLowerCase()}.`;
+  switch (spec.kind) {
+    case "count":
+      return "Enter a whole number of 1 or more.";
+    case "pct":
+      return "Enter a percentage from 0 to 100.";
+    case "money":
+      return spec.key === "aov" ? "Enter an amount above 0." : "Enter 0 or more.";
+    case "perLead":
+      return "Enter 0 or more.";
+    case "quality":
+      return "Enter a score from 0 to 5.";
+  }
+}
+
+function Field({ spec, value, error, onChange }: { spec: FieldSpec; value: string; error?: string; onChange: (v: string) => void }) {
   const id = `f-${spec.key}`;
   return (
     <div className="flex min-w-0 flex-col justify-end">
-      <label htmlFor={id} className="mb-1 block text-xs leading-snug">
-        <span className={emphasise ? "font-medium text-zinc-900" : "text-zinc-600"}>{spec.label}</span>
-        {spec.hint ? <span className="text-zinc-400"> · {spec.hint}</span> : null}
+      <label htmlFor={id} className="mb-1 block text-[13px] leading-snug text-ink-2">
+        {spec.label}
+        {spec.hint ? <span className="text-muted">, {spec.hint}</span> : null}
       </label>
       <div
         className={cn(
-          "flex h-9 items-center rounded-lg border bg-white focus-within:ring-2",
-          error ? "border-red-400 focus-within:ring-red-100" : "border-zinc-200 focus-within:border-emerald-700 focus-within:ring-emerald-100",
+          "flex h-10 items-center rounded-md border bg-surface",
+          error ? "border-kill ring-2 ring-kill-soft" : "border-rule focus-within:border-agent",
         )}
       >
         <input
@@ -47,13 +65,13 @@ function Field({ spec, value, error, onChange, emphasise }: { spec: FieldSpec; v
           onChange={(e) => onChange(e.target.value)}
           aria-invalid={Boolean(error)}
           aria-describedby={error ? `${id}-err` : undefined}
-          className="h-full w-full min-w-0 rounded-lg bg-transparent px-2.5 text-sm tabular-nums text-zinc-900 focus:outline-none"
+          className="h-full w-full min-w-0 rounded-md bg-transparent px-3 text-[15px] text-ink focus:outline-none"
         />
-        {spec.unit ? <span className="pr-2.5 text-xs text-zinc-400">{spec.unit}</span> : null}
+        {spec.unit ? <span className="pr-3 text-[13px] text-muted">{spec.unit}</span> : null}
       </div>
       {error ? (
-        <p id={`${id}-err`} className="mt-1 text-[11px] text-red-600">
-          {error}
+        <p id={`${id}-err`} className="mt-1 text-[13px] text-kill">
+          {fixMessage(spec, error)}
         </p>
       ) : null}
     </div>
@@ -64,208 +82,214 @@ function Field({ spec, value, error, onChange, emphasise }: { spec: FieldSpec; v
 /* Results                                                             */
 /* ------------------------------------------------------------------ */
 
-const EVIDENCE_TONE: Record<Evidence["tone"], string> = {
-  strong: "bg-emerald-50 text-emerald-900 ring-emerald-200",
-  promising: "bg-amber-50 text-amber-900 ring-amber-200",
-  weak: "bg-white/70 text-zinc-700 ring-zinc-200",
+const STATUS_ICON: Record<GuardrailStatus, ReactNode> = {
+  pass: <CheckCircle2 className="h-[18px] w-[18px] text-agent" aria-label="Passes" />,
+  warn: <CircleAlert className="h-[18px] w-[18px] text-iterate" aria-label="Warning" />,
+  fail: <XCircle className="h-[18px] w-[18px] text-kill" aria-label="Breached" />,
 };
 
-function EvidencePill({ p }: { p: number }) {
-  const e = evidenceLabel(p);
-  return (
-    <span className={cn("inline-flex rounded-full px-2.5 py-1 text-xs font-medium ring-1 ring-inset", EVIDENCE_TONE[e.tone])}>
-      {e.label}
-    </span>
-  );
+const COST_BANDS = `Scale at ${VERDICT.scaleMaxCostToServePct}% or below · ${VERDICT.scaleMaxCostToServePct}–${VERDICT.killMaxCostToServePct}% = iterate · above ${VERDICT.killMaxCostToServePct}% = kill`;
+
+function guardrailDetail(g: Guardrail, r: ExperimentResults, x: ExperimentInputs): ReactNode {
+  switch (g.key) {
+    case "cost": {
+      const value =
+        r.costStatus === "no_gmv"
+          ? "No incremental GMV, so it is uneconomic"
+          : r.costStatus === "net_saving"
+            ? "Net cost saving against control"
+            : `${pct(r.costToServePct ?? 0)} of incremental GMV`;
+      return (
+        <>
+          {value}
+          <span className="mt-0.5 block text-muted">{COST_BANDS}</span>
+        </>
+      );
+    }
+    case "app":
+      return r.appConvRelativeDropPct > 0
+        ? `${pct(r.appConvRelativeDropPct)} relative drop against the holdout; the limit is ${pct(x.maxAppDropPct)}`
+        : `No drop against the holdout; the limit is ${pct(x.maxAppDropPct)}`;
+    case "quality":
+      return `${x.quality.toFixed(1)} out of 5; the minimum is ${x.qualityThreshold.toFixed(1)}`;
+    case "optout":
+      return `${pct(x.optOutPct)}; the maximum is ${pct(x.maxOptOutPct)}`;
+  }
 }
 
-function Tile({ label, value, sub, emphasise }: { label: string; value: ReactNode; sub?: ReactNode; emphasise?: boolean }) {
+function Figure({ label, value, emphasise }: { label: string; value: ReactNode; emphasise?: boolean }) {
   return (
-    <div className={cn("min-w-0 rounded-xl px-4 py-3", emphasise ? "bg-white ring-1 ring-zinc-300" : "bg-zinc-50")}>
-      <div className="text-xs leading-snug text-zinc-500">{label}</div>
-      <div className="mt-1 text-xl font-semibold tabular-nums tracking-tight text-zinc-900">{value}</div>
-      {sub ? <div className="mt-0.5 text-[11px] leading-snug text-zinc-500">{sub}</div> : null}
+    <div className="min-w-0 py-3">
+      <div className={cn("text-[22px] font-semibold leading-tight", emphasise ? "text-agent" : "text-ink")}>{value}</div>
+      <div className="mt-1 text-[13px] leading-snug text-muted">{label}</div>
     </div>
   );
 }
 
-const STATUS_ICON: Record<GuardrailStatus, ReactNode> = {
-  pass: <CheckCircle2 className="h-4 w-4 text-emerald-700" aria-label="Pass" />,
-  warn: <CircleAlert className="h-4 w-4 text-amber-600" aria-label="Warning" />,
-  fail: <XCircle className="h-4 w-4 text-red-600" aria-label="Breached" />,
-};
-
-/** Guardrail detail rendered with the shared formatters (values come from lib results). */
-function guardrailDetail(g: Guardrail, r: ExperimentResults, x: ExperimentInputs): string {
-  switch (g.key) {
-    case "cost":
-      if (r.costStatus === "no_gmv") return "No incremental GMV · uneconomic";
-      if (r.costStatus === "net_saving") return "Net cost saving vs control";
-      return `${pct(r.costToServePct ?? 0)} (scale ≤ ${pct(VERDICT.scaleMaxCostToServePct)}, kill > ${pct(VERDICT.killMaxCostToServePct)})`;
-    case "app":
-      return r.appConvRelativeDropPct > 0
-        ? `${pct(r.appConvRelativeDropPct)} relative drop vs holdout (max ${pct(x.maxAppDropPct)})`
-        : `No drop vs holdout (max ${pct(x.maxAppDropPct)})`;
-    case "quality":
-      return `${x.quality.toFixed(1)} / 5 (min ${x.qualityThreshold.toFixed(1)})`;
-    case "optout":
-      return `${pct(x.optOutPct)} (max ${pct(x.maxOptOutPct)})`;
-  }
-}
-
-function VerdictCard({ r, x }: { r: ExperimentResults; x: ExperimentInputs }) {
+function Results({ def, r, x }: { def: ExperimentDefinition; r: ExperimentResults; x: ExperimentInputs }) {
   const s = VERDICT_STYLE[r.verdict];
+  const ev = evidenceLabel(r.pValue);
+  const killedOnCost = r.costStatus === "pct" && (r.costToServePct ?? 0) > VERDICT.killMaxCostToServePct;
+
   return (
-    <div className={cn("rounded-2xl p-5 ring-1 ring-inset sm:p-6", s.card)}>
-      <div className="flex flex-wrap items-center gap-3">
-        <span className={cn("rounded-lg px-3 py-1.5 text-lg font-bold tracking-wide sm:text-xl", s.chip)}>{r.verdict}</span>
-        <EvidencePill p={r.pValue} />
+    <div className="space-y-10">
+      {/* Verdict first and largest */}
+      <div className={cn("border-l-4 pl-5 sm:pl-6", s.rule)}>
+        <div className="flex flex-wrap items-baseline gap-x-4 gap-y-1">
+          <span className={cn("text-[44px] font-semibold leading-none tracking-[-0.02em] sm:text-[56px]", s.text)}>{s.word}</span>
+          {r.verdict !== "ITERATE" ? <span className="text-[15px] text-muted">{ev.label}</span> : null}
+        </div>
+        <p className="mt-3 max-w-[68ch] text-[17px] leading-relaxed text-ink">{plainReason(r, x)}</p>
       </div>
-      <p className={cn("mt-3 text-base font-medium leading-relaxed sm:text-lg", s.text)}>{plainReason(r, x)}</p>
+
+      <dl className="grid max-w-[900px] gap-x-10 gap-y-3 text-[15px] sm:grid-cols-3">
+        {(
+          [
+            ["Treatment", def.treatment],
+            ["Control", def.control],
+            ["Primary metric", def.primaryMetric],
+          ] as const
+        ).map(([k, val]) => (
+          <div key={k}>
+            <dt className="text-[13px] text-muted">{k}</dt>
+            <dd className="text-ink">{val}</dd>
+          </div>
+        ))}
+      </dl>
+
+      {/* Same visual language as the hero */}
+      <div>
+        <p className="mb-3 text-[15px] text-ink-2">
+          <span className="font-semibold text-ink">
+            <AnimatedNumber value={r.treatmentBookings} format={num1} />
+          </span>{" "}
+          bookings in the treatment group of {int(x.treatmentN)} leads
+        </p>
+        <SplitBar
+          total={r.treatmentBookings}
+          caused={r.incrementalBookings}
+          anywayLabel="Would have happened anyway"
+          causedLabel="Caused by the treatment"
+          size="md"
+        />
+        <div className="mt-6 grid grid-cols-2 gap-6 sm:gap-12">
+          <div>
+            <div className="text-[30px] font-semibold leading-none text-ink">
+              {r.attributedCostPct !== null ? <AnimatedNumber value={r.attributedCostPct} format={pct} /> : "n/a"}
+            </div>
+            <p className="mt-1.5 text-[14px] leading-snug text-ink-2">cost to serve if every agent-touched booking counts</p>
+          </div>
+          <div>
+            <div className={cn("text-[30px] font-semibold leading-none", killedOnCost ? "text-kill" : r.costStatus === "pct" ? "text-ink" : "text-agent")}>
+              {r.costStatus === "pct" ? (
+                <AnimatedNumber value={r.costToServePct ?? 0} format={pct} />
+              ) : r.costStatus === "net_saving" ? (
+                "Net saving"
+              ) : (
+                <span className="text-kill">None caused</span>
+              )}
+            </div>
+            <p className="mt-1.5 text-[14px] leading-snug text-ink-2">
+              {r.costStatus === "no_gmv" ? "no extra bookings, so the contact cost buys nothing" : "on bookings the treatment actually caused"}
+            </p>
+          </div>
+        </div>
+      </div>
+
+      {/* Key figures as one ruled row */}
+      <div className="grid grid-cols-2 gap-x-8 border-y border-rule py-2 sm:grid-cols-4">
+        <Figure label="extra bookings caused" value={<AnimatedNumber value={r.incrementalBookings} format={num1} />} />
+        <Figure label="extra GMV, booked not yet delivered" value={<AnimatedNumber value={r.incrementalGmv} format={aed} />} />
+        <Figure label="extra contact cost" value={<AnimatedNumber value={r.incrementalCost} format={aed} />} />
+        {def.highlightConnection ? (
+          <Figure label="connection rate, this test's primary metric" value={pct(x.connectionRatePct)} emphasise />
+        ) : (
+          <Figure
+            label={def.highlightCostPerIncBooking ? "per extra booking, this test's guardrail" : "per extra booking"}
+            value={r.costPerIncrementalBooking === null ? "n/a" : r.costPerIncrementalBooking <= 0 ? "Saving" : aed(r.costPerIncrementalBooking)}
+            emphasise={def.highlightCostPerIncBooking}
+          />
+        )}
+      </div>
+
+      {/* Guardrails */}
+      <div>
+        <SubLabel>Guardrails</SubLabel>
+        <ul className="mt-3 divide-y divide-rule/70">
+          {r.guardrails.map((g) => (
+            <li key={g.key} className="flex items-start gap-3 py-3">
+              <span className="mt-0.5">{STATUS_ICON[g.status]}</span>
+              <span className="grid min-w-0 flex-1 gap-0.5 sm:grid-cols-[200px_minmax(0,1fr)] sm:gap-4">
+                <span className="text-[15px] font-medium text-ink">{g.label}</span>
+                <span className={cn("text-[14px]", g.status === "fail" ? "text-kill" : g.status === "warn" ? "text-iterate" : "text-ink-2")}>
+                  {guardrailDetail(g, r, x)}
+                </span>
+              </span>
+            </li>
+          ))}
+        </ul>
+      </div>
+
+      <div>
+        <Disclosure title="Show the maths" summary="p-value, z, sample size and every formula with this test's numbers.">
+          <Maths r={r} x={x} />
+        </Disclosure>
+      </div>
     </div>
   );
 }
 
 function Maths({ r, x }: { r: ExperimentResults; x: ExperimentInputs }) {
   const rows: [string, string][] = [
-    ["p-value (two-sided, pooled z-test)", r.pValue < 0.001 ? "< 0.001" : r.pValue.toFixed(3)],
+    ["p-value, two-sided pooled z-test", r.pValue < 0.001 ? "below 0.001" : r.pValue.toFixed(3)],
     ["z statistic", r.z.toFixed(2)],
-    [`Significant at ${VERDICT.alpha}?`, r.significant ? "Yes" : "No"],
-    ["Sample needed per arm (95% conf., 80% power)", r.sampleNeededPerArm !== null ? `≈ ${int(r.sampleNeededPerArm)}` : "No lift to detect"],
-    ["Current sample (treatment / control)", `${int(x.treatmentN)} / ${int(x.controlN)}`],
+    [`Significant at ${VERDICT.alpha}`, r.significant ? "Yes" : "No"],
+    ["Sample needed per arm, 95% confidence and 80% power", r.sampleNeededPerArm !== null ? `about ${int(r.sampleNeededPerArm)}` : "No lift to detect"],
+    ["Current sample, treatment and control", `${int(x.treatmentN)} and ${int(x.controlN)}`],
   ];
   const tRate = x.treatmentRatePct / 100;
   const cRate = x.controlRatePct / 100;
   const formulas = [
     `Incremental bookings = ${int(x.treatmentN)} × (${tRate.toFixed(3)} − ${cRate.toFixed(3)}) = ${num1(r.incrementalBookings)}`,
     `Incremental GMV = ${num1(r.incrementalBookings)} × ${aed(x.aov)} = ${aed(r.incrementalGmv)}`,
-    `Cost per lead = calls × ${aed(x.costPerCall)} + WhatsApps × AED ${x.costPerWa.toFixed(2)} → treatment AED ${r.costPerLeadT.toFixed(2)}, control AED ${r.costPerLeadC.toFixed(2)}`,
+    `Cost per lead = calls × ${aed(x.costPerCall)} + WhatsApps × AED ${x.costPerWa.toFixed(2)}, giving AED ${r.costPerLeadT.toFixed(2)} for treatment and AED ${r.costPerLeadC.toFixed(2)} for control`,
     `Incremental cost = ${int(x.treatmentN)} × (${r.costPerLeadT.toFixed(2)} − ${r.costPerLeadC.toFixed(2)}) = ${aed(r.incrementalCost)}`,
     r.costStatus === "pct"
       ? `Cost to serve = ${aed(r.incrementalCost)} ÷ ${aed(r.incrementalGmv)} = ${pct(r.costToServePct ?? 0)}`
       : r.costStatus === "net_saving"
-        ? "Cost to serve: incremental cost ≤ 0 with positive GMV → net cost saving"
-        : "Cost to serve: incremental GMV ≤ 0 → no percentage (uneconomic)",
+        ? "Cost to serve: incremental cost is zero or less with positive GMV, so it is a net saving"
+        : "Cost to serve: incremental GMV is zero or less, so no percentage is shown",
     r.attributedCostPct !== null
-      ? `If we credit every agent-touched booking = (${int(x.treatmentN)} × ${r.costPerLeadT.toFixed(2)}) ÷ (${num1(r.treatmentBookings)} × ${aed(x.aov)}) = ${pct(r.attributedCostPct)}`
-      : "If we credit every agent-touched booking: no treatment bookings",
-    "Sample size n = (z₀.₉₇₅·√(2p̄q̄) + z₀.₈·√(p₁q₁ + p₂q₂))² ÷ (p₁ − p₂)²",
+      ? `If every agent-touched booking counts = (${int(x.treatmentN)} × ${r.costPerLeadT.toFixed(2)}) ÷ (${num1(r.treatmentBookings)} × ${aed(x.aov)}) = ${pct(r.attributedCostPct)}`
+      : "If every agent-touched booking counts: there are no treatment bookings",
+    "Sample size n = (z₀.₉₇₅ √(2p̄q̄) + z₀.₈ √(p₁q₁ + p₂q₂))² ÷ (p₁ − p₂)²",
   ];
   return (
-    <div className="space-y-4 rounded-xl bg-zinc-50 p-4">
-      <dl className="grid gap-x-6 gap-y-2 text-sm sm:grid-cols-2">
-        {rows.map(([k, v]) => (
-          <div key={k} className="flex items-baseline justify-between gap-3">
-            <dt className="text-zinc-500">{k}</dt>
-            <dd className="shrink-0 font-medium tabular-nums text-zinc-900">{v}</dd>
-          </div>
-        ))}
-      </dl>
-      <ul className="space-y-1.5 font-mono text-[11px] leading-relaxed text-zinc-600 sm:text-xs">
-        {formulas.map((f) => (
-          <li key={f} className="break-words">
-            {f}
-          </li>
-        ))}
-      </ul>
-      <p className="text-xs text-zinc-500">
-        Approximate: normal approximation, with no correction for running three experiments or for checking results early.
-      </p>
-    </div>
-  );
-}
-
-function Results({ def, r, x }: { def: ExperimentDefinition; r: ExperimentResults; x: ExperimentInputs }) {
-  const [showMaths, setShowMaths] = useState(false);
-  const costToServe =
-    r.costStatus === "no_gmv" ? (
-      <span className="text-base text-red-700">No incremental GMV · uneconomic</span>
-    ) : r.costStatus === "net_saving" ? (
-      <span className="text-emerald-800">Net cost saving</span>
-    ) : (
-      <span className={(r.costToServePct ?? 0) > VERDICT.killMaxCostToServePct ? "text-red-700" : undefined}>
-        {pct(r.costToServePct ?? 0)}
-      </span>
-    );
-
-  return (
-    <div className="space-y-5">
-      <VerdictCard r={r} x={x} />
-
-      <div className="grid grid-cols-2 gap-2.5 xl:grid-cols-3">
-        <Tile
-          label="Cost to serve on bookings agents caused"
-          value={costToServe}
-          sub={`Scale ≤ ${pct(VERDICT.scaleMaxCostToServePct)} · kill > ${pct(VERDICT.killMaxCostToServePct)}`}
-          emphasise
-        />
-        <Tile
-          label="If we credit every agent-touched booking"
-          value={r.attributedCostPct !== null ? pct(r.attributedCostPct) : "n/a"}
-          sub="Total treatment cost ÷ total treatment GMV"
-        />
-        <Tile
-          label="Extra bookings caused"
-          value={num1(r.incrementalBookings)}
-          sub={`of ${num1(r.treatmentBookings)} treatment bookings${r.incrementalShare !== null && r.incrementalShare > 0 ? ` (${pct(r.incrementalShare * 100)})` : ""}`}
-        />
-        <Tile label="Extra GMV" value={aed(r.incrementalGmv)} sub="Booked, not yet delivered" />
-        <Tile label="Extra contact cost" value={aed(r.incrementalCost)} sub={`AED ${r.costPerLeadT.toFixed(2)} vs ${r.costPerLeadC.toFixed(2)} per lead`} />
-        <Tile
-          label="Cost per extra booking"
-          value={r.costPerIncrementalBooking === null ? "n/a" : r.costPerIncrementalBooking <= 0 ? "Saving" : aed(r.costPerIncrementalBooking)}
-          sub={def.highlightCostPerIncBooking ? "Guardrail for this experiment" : undefined}
-          emphasise={def.highlightCostPerIncBooking}
-        />
-        {def.highlightConnection ? (
-          <Tile label="Connection rate" value={pct(x.connectionRatePct)} sub="Primary metric (informational here)" emphasise />
-        ) : null}
+    <div className="grid gap-8 lg:grid-cols-[minmax(0,1fr)_300px]">
+      <div className="space-y-5">
+        <dl className="divide-y divide-rule/70 text-[14px]">
+          {rows.map(([k, v]) => (
+            <div key={k} className="flex items-baseline justify-between gap-4 py-2">
+              <dt className="text-ink-2">{k}</dt>
+              <dd className="shrink-0 font-semibold text-ink">{v}</dd>
+            </div>
+          ))}
+        </dl>
+        <ol className="list-decimal space-y-1.5 pl-5 text-[14px] leading-relaxed text-ink-2 marker:text-muted">
+          {formulas.map((f) => (
+            <li key={f} className="break-words">
+              {f}
+            </li>
+          ))}
+        </ol>
+        <p className="text-[13px] text-muted">
+          Approximate. Uses a normal approximation, with no correction for running three experiments or for checking results
+          early.
+        </p>
       </div>
-
-      <div className="grid gap-4 md:grid-cols-2">
-        <div className="rounded-xl bg-zinc-50 p-4">
-          <div className="text-xs text-zinc-500">Booking rate per assigned lead</div>
-          <RateChart treatment={x.treatmentRatePct} control={x.controlRatePct} />
-        </div>
-        <div className="rounded-xl bg-zinc-50 p-4">
-          <div className="mb-3 text-xs text-zinc-500">Guardrails</div>
-          <ul className="space-y-3">
-            {r.guardrails.map((g) => (
-              <li key={g.key} className="flex items-start gap-2.5">
-                <span className="mt-0.5">{STATUS_ICON[g.status]}</span>
-                <span className="min-w-0">
-                  <span className="block text-sm font-medium text-zinc-900">{g.label}</span>
-                  <span
-                    className={cn(
-                      "block text-xs",
-                      g.status === "fail" ? "text-red-700" : g.status === "warn" ? "text-amber-700" : "text-zinc-500",
-                    )}
-                  >
-                    {guardrailDetail(g, r, x)}
-                  </span>
-                </span>
-              </li>
-            ))}
-          </ul>
-        </div>
-      </div>
-
       <div>
-        <button
-          type="button"
-          onClick={() => setShowMaths((s) => !s)}
-          aria-expanded={showMaths}
-          className="inline-flex items-center gap-2 rounded-lg px-2 py-1.5 text-sm font-medium text-emerald-800 hover:bg-emerald-50"
-        >
-          <Sigma className="h-4 w-4" aria-hidden />
-          {showMaths ? "Hide the maths" : "Show the maths"}
-          <ChevronDown className={cn("h-4 w-4 transition-transform", showMaths && "rotate-180")} aria-hidden />
-        </button>
-        {showMaths ? (
-          <div className="mt-2">
-            <Maths r={r} x={x} />
-          </div>
-        ) : null}
+        <div className="text-[13px] text-muted">Booking rate per assigned lead</div>
+        <RateChart treatment={x.treatmentRatePct} control={x.controlRatePct} />
       </div>
     </div>
   );
@@ -286,7 +310,6 @@ export function ExperimentPanel({
   onChange: (next: RawInputs) => void;
   onReset: () => void;
 }) {
-  const [inputsOpen, setInputsOpen] = useState(false);
   const v = validateInputs(raw, def.hasOptOut);
   const values = v.ok ? v.values : null;
   const results = values ? computeResults(values, def.hasOptOut) : null;
@@ -294,99 +317,61 @@ export function ExperimentPanel({
   const set = (k: InputKey, value: string) => onChange({ ...raw, [k]: value });
 
   return (
-    <Card>
-      <div className="px-5 pt-5 sm:px-6 sm:pt-6">
-        <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-[11px] font-semibold uppercase tracking-wider text-zinc-400">Experiment {def.number}</div>
-            <h3 className="mt-0.5 text-lg font-semibold text-zinc-950 sm:text-xl">{def.title}</h3>
+    <div className="space-y-8">
+      <h3 className="text-[20px] font-semibold leading-snug text-ink sm:hidden">{def.title}</h3>
+      {results && values ? (
+        <Results def={def} r={results} x={values} />
+      ) : (
+        <div className="flex items-start gap-3 border-l-4 border-kill py-2 pl-5">
+          <AlertTriangle className="mt-1 h-5 w-5 shrink-0 text-kill" aria-hidden />
+          <div>
+            <p className="text-[17px] font-semibold text-ink">
+              {errorCount === 1 ? "One assumption needs fixing" : `${errorCount} assumptions need fixing`} before there is a verdict.
+            </p>
+            <p className="mt-1 text-[15px] text-ink-2">Nothing is calculated from invalid inputs. The fields to fix are marked in red below.</p>
           </div>
-          <button
-            type="button"
-            onClick={onReset}
-            className="inline-flex shrink-0 items-center gap-1.5 rounded-lg px-2.5 py-1.5 text-xs font-medium text-zinc-600 hover:bg-zinc-100"
-          >
-            <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Reset to preset
-          </button>
         </div>
-        <dl className="mt-3 grid gap-x-8 gap-y-2 text-sm sm:grid-cols-2">
-          {(
-            [
-              ["Treatment", def.treatment],
-              ["Control", def.control],
-              ["Primary metric", def.primaryMetric],
-              ["Guardrails", def.guardrailNote],
-            ] as const
-          ).map(([k, val]) => (
-            <div key={k} className="flex gap-2">
-              <dt className="w-28 shrink-0 text-zinc-500">{k}</dt>
-              <dd className="min-w-0 text-zinc-800">{val}</dd>
-            </div>
-          ))}
-        </dl>
-      </div>
+      )}
 
-      <div className="grid gap-6 p-5 sm:p-6 lg:grid-cols-[minmax(0,7fr)_minmax(0,4fr)] lg:gap-8">
-        <div>
-          {results && values ? (
-            <Results def={def} r={results} x={values} />
-          ) : (
-            <div className="flex min-h-48 flex-col items-center justify-center gap-2 rounded-2xl bg-red-50 p-6 text-center ring-1 ring-inset ring-red-200">
-              <AlertTriangle className="h-5 w-5 text-red-600" aria-hidden />
-              <p className="text-sm font-medium text-zinc-900">Fix the highlighted inputs to see results</p>
-              <p className="text-xs text-zinc-500">Nothing is calculated from invalid assumptions.</p>
-            </div>
-          )}
-        </div>
-
-        <div className="lg:border-l lg:border-zinc-100 lg:pl-8">
-          <button
-            type="button"
-            onClick={() => setInputsOpen((o) => !o)}
-            aria-expanded={inputsOpen}
-            className="flex w-full items-center justify-between rounded-xl bg-zinc-50 px-4 py-3 text-left text-sm font-semibold text-zinc-900 lg:hidden"
-          >
-            <span>
-              Change the assumptions
-              {errorCount > 0 ? <span className="ml-2 text-xs font-medium text-red-600">{errorCount} to fix</span> : null}
-            </span>
-            <ChevronDown className={cn("h-4 w-4 text-zinc-400 transition-transform", inputsOpen && "rotate-180")} aria-hidden />
-          </button>
-          <div className="mb-4 hidden text-sm font-semibold text-zinc-900 lg:block">Change the assumptions</div>
-          <div className={cn("space-y-6 pt-4 lg:block lg:pt-0", inputsOpen ? "block" : "hidden")}>
+      <Disclosure
+        title="Change the assumptions"
+        summary={errorCount > 0 ? <span className="text-kill">{errorCount} to fix</span> : "Sample sizes, booking rates, contact costs and guardrail limits."}
+        defaultOpen={errorCount > 0}
+      >
+        <div className="space-y-8">
+          <div className="grid gap-8 lg:grid-cols-3">
             {FIELD_GROUPS.map((g) => {
               const fields = g.fields.filter((f) => !f.optOutOnly || def.hasOptOut);
               return (
-                <fieldset key={g.title} className="space-y-3">
-                  <legend className="mb-1">
-                    <SectionLabel>{g.title}</SectionLabel>
-                  </legend>
-                  <div className="grid grid-cols-1 gap-3 min-[400px]:grid-cols-2">
+                <fieldset key={g.title} className="min-w-0 space-y-3">
+                  <legend className="mb-2 text-[15px] font-semibold text-ink">{g.title}</legend>
+                  <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-2">
                     {fields.map((f) => (
-                      <Field
-                        key={f.key}
-                        spec={f}
-                        value={raw[f.key]}
-                        error={v.errors[f.key]}
-                        onChange={(val) => set(f.key, val)}
-                        emphasise={f.key === "connectionRatePct" && def.highlightConnection}
-                      />
+                      <Field key={f.key} spec={f} value={raw[f.key]} error={v.errors[f.key]} onChange={(val) => set(f.key, val)} />
                     ))}
                   </div>
                 </fieldset>
               );
             })}
-            <div className="space-y-1.5 text-xs leading-relaxed text-zinc-500">
-              <p>Booking rates are per assigned lead, including leads the team never connected with.</p>
-              <p>Bookings would be attributed at 1, 3 and 7 days.</p>
+          </div>
+          <div className="flex flex-col gap-4 border-t border-rule pt-4 sm:flex-row sm:items-start sm:justify-between">
+            <div className="max-w-[70ch] space-y-1 text-[13px] leading-relaxed text-muted">
+              <p>Booking rates are per assigned lead, including leads the team never reached. Bookings would be attributed at 1, 3 and 7 days.</p>
               <p>
-                Experiments draw from non-holdout leads; treatment and control are randomised within each experiment. Sample sizes
-                are projected volumes, not the 60 synthetic leads.
+                Experiments draw from leads outside the holdout, with treatment and control randomised within each experiment. Sample
+                sizes are projected volumes, not the 60 synthetic leads.
               </p>
             </div>
+            <button
+              type="button"
+              onClick={onReset}
+              className="inline-flex shrink-0 items-center gap-1.5 self-start rounded-md border border-rule bg-surface px-3 py-1.5 text-[13px] font-medium text-ink hover:border-ink/30"
+            >
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden /> Reset to preset
+            </button>
           </div>
         </div>
-      </div>
-    </Card>
+      </Disclosure>
+    </div>
   );
 }

@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { EXPERIMENTS, computeResults, toRaw, validateInputs, type RawInputs } from "@/lib/experiments";
 import { ExperimentPanel } from "./ExperimentPanel";
-import { cn, VERDICT_STYLE } from "./ui";
+import { cn, SectionHeading, VERDICT_STYLE } from "./ui";
 
 const initial = () => Object.fromEntries(EXPERIMENTS.map((e) => [e.id, toRaw(e.preset)])) as Record<string, RawInputs>;
-
 
 export function ExperimentSimulator() {
   const [raw, setRaw] = useState<Record<string, RawInputs>>(initial);
@@ -14,13 +13,13 @@ export function ExperimentSimulator() {
   const active = EXPERIMENTS.find((e) => e.id === activeId) ?? EXPERIMENTS[0];
 
   return (
-    <div className="space-y-5">
-      <div className="rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-700">
-        <span className="font-semibold text-zinc-900">Simulated results from editable assumptions.</span> Hypotheses to test, not claims. Not
-        observed data.
-      </div>
+    <section aria-labelledby="sim-title" className="space-y-6">
+      <SectionHeading id="sim-title" title="Experiment simulator">
+        Three tests the team could run next, judged on bookings agents cause, not bookings they touch. These are simulated
+        results from editable assumptions: hypotheses to test, not observed data.
+      </SectionHeading>
 
-      <div className="grid gap-2 sm:grid-cols-3" role="tablist" aria-label="Experiments">
+      <div role="tablist" aria-label="Experiments" className="grid grid-cols-3 border-y border-rule">
         {EXPERIMENTS.map((e) => {
           const v = validateInputs(raw[e.id], e.hasOptOut);
           const verdict = v.ok ? computeResults(v.values, e.hasOptOut).verdict : null;
@@ -33,28 +32,16 @@ export function ExperimentSimulator() {
               aria-selected={selected}
               onClick={() => setActiveId(e.id)}
               className={cn(
-                "flex items-start justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition",
-                selected ? "ring-2 ring-emerald-800" : "ring-1 ring-zinc-950/[0.06] hover:ring-zinc-300",
+                "relative py-4 pr-3 text-left sm:pr-6",
+                selected ? "text-ink" : "text-muted hover:text-ink",
               )}
             >
-              <span className="min-w-0">
-                <span className="block text-[11px] font-semibold uppercase tracking-wider text-zinc-400">
-                  Experiment {e.number}
-                </span>
-                <span className="mt-0.5 block text-sm font-medium leading-snug text-zinc-900">{e.title}</span>
+              {selected ? <span className="absolute -top-px left-0 right-3 h-[3px] bg-ink sm:right-6" aria-hidden /> : null}
+              <span className="block text-[13px]">Experiment {e.number}</span>
+              <span className="mt-0.5 hidden text-[15px] font-semibold leading-snug sm:block">{e.title}</span>
+              <span className={cn("mt-1.5 block text-[14px] font-semibold", verdict ? VERDICT_STYLE[verdict].text : "text-kill")}>
+                {verdict ? VERDICT_STYLE[verdict].word : "Needs fixing"}
               </span>
-              {verdict ? (
-                <span
-                  className={cn(
-                    "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset",
-                    VERDICT_STYLE[verdict].chip,
-                  )}
-                >
-                  {VERDICT_STYLE[verdict].label}
-                </span>
-              ) : (
-                <span className="shrink-0 rounded-md bg-zinc-100 px-2 py-0.5 text-xs text-zinc-500">Invalid</span>
-              )}
             </button>
           );
         })}
@@ -67,6 +54,6 @@ export function ExperimentSimulator() {
         onChange={(next) => setRaw((r) => ({ ...r, [active.id]: next }))}
         onReset={() => setRaw((r) => ({ ...r, [active.id]: toRaw(active.preset) }))}
       />
-    </div>
+    </section>
   );
 }

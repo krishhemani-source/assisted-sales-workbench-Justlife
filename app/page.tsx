@@ -1,36 +1,40 @@
 import { AppShell } from "@/components/AppShell";
+import { BriefMap } from "@/components/BriefMap";
 import { Limitations } from "@/components/Limitations";
 
 export default function Home() {
   return (
     <div className="flex min-h-screen flex-col">
-      <header>
-        <div className="mx-auto flex max-w-7xl flex-col gap-1 px-4 pt-5 sm:px-6 sm:pt-6 md:flex-row md:items-center md:justify-between md:gap-4">
-          <div className="flex flex-wrap items-center gap-2">
-            <h1 className="text-sm font-semibold text-zinc-900">Assisted Sales Experiment Workbench</h1>
-            <span className="rounded-full bg-zinc-200/70 px-2.5 py-0.5 text-[11px] font-medium text-zinc-700">
-              Synthetic data. Illustrative only.
-            </span>
+      <header className="mx-auto w-full max-w-[1120px] px-4 pt-6 sm:px-8 sm:pt-8">
+        <div className="flex items-start gap-3 border-b border-rule pb-5">
+          <svg viewBox="0 0 32 32" className="mt-0.5 h-7 w-7 shrink-0" aria-hidden>
+            <rect width="32" height="32" rx="7" fill="#0E5C49" />
+            <path d="M9.2 23 15 9h2l5.8 14h-2.6l-1.4-3.6h-5.6L11.8 23H9.2Zm4.8-5.8h4l-2-5.3-2 5.3Z" fill="#F3F5F4" />
+          </svg>
+          <div className="min-w-0">
+            <h1 className="text-[15px] font-semibold leading-snug text-ink">Assisted Sales Experiment Workbench</h1>
+            <p className="text-[13px] leading-snug text-muted">
+              Built for Justlife&apos;s BSL problem statement on scaling assisted sales. Synthetic data.
+            </p>
           </div>
-          <p className="text-xs text-zinc-500 md:max-w-md md:text-right">
-            A decision workbench for finding where human intervention creates incremental bookings, instead of paying agents to
-            convert customers who would have booked anyway.
-          </p>
         </div>
       </header>
 
-      <main className="mx-auto w-full max-w-7xl flex-1 space-y-4 px-4 pb-12 pt-8 sm:px-6 sm:pt-10">
+      <main className="mx-auto w-full max-w-[1120px] flex-1 px-4 pb-16 pt-12 sm:px-8 sm:pt-16">
         <AppShell />
-        <div className="pt-4">
+        <div className="mt-20 sm:mt-28">
+          <BriefMap />
+        </div>
+        <div className="mt-16">
           <Limitations />
         </div>
       </main>
 
-      <footer>
-        <div className="mx-auto max-w-7xl px-4 pb-8 text-xs leading-relaxed text-zinc-400 sm:px-6">
+      <footer className="mx-auto w-full max-w-[1120px] px-4 pb-10 sm:px-8">
+        <p className="border-t border-rule pt-5 text-[13px] leading-relaxed text-muted">
           Concept prototype by Krish Hemani for a Mesa School of Business BSL application. Synthetic data. Not affiliated with or
-          endorsed by any company.
-        </div>
+          endorsed by Justlife.
+        </p>
       </footer>
     </div>
   );
