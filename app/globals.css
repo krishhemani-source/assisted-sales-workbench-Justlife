@@ -15,7 +15,7 @@ body {
 
 /* Calm, consistent range inputs */
 input[type="range"] {
-  accent-color: #27272a;
+  accent-color: #065f46;
 }
 
 /* Hide number spinners for a cleaner input grid */

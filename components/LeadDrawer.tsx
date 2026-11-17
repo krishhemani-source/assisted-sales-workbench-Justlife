@@ -6,13 +6,13 @@ import { SERVICE_LABELS, SOURCE_LABELS, STAGE_LABELS } from "@/lib/config";
 import { formatAed, formatHours, OVERRIDE_LABEL, type SubScore } from "@/lib/scoring";
 import { draftMessage, suggestedApproach } from "@/lib/templates";
 import type { Weights } from "@/lib/types";
-import type { ScoredLead } from "./LeadWorkbench";
+import type { ScoredLead } from "./useScoring";
 import { ActionBadge, SectionLabel } from "./ui";
 
 function Breakdown({ title, sub, weight }: { title: string; sub: SubScore; weight: number }) {
   return (
-    <div className="rounded-lg border border-zinc-200">
-      <div className="flex items-baseline justify-between border-b border-zinc-200 px-3 py-2">
+    <div className="rounded-xl bg-zinc-50">
+      <div className="flex items-baseline justify-between border-b border-zinc-200/70 px-3 py-2.5">
         <span className="text-sm font-medium text-zinc-900">{title}</span>
         <span className="text-xs text-zinc-500">
           <span className="text-sm font-semibold tabular-nums text-zinc-900">{sub.total}</span> / 100 · weight{" "}
@@ -20,7 +20,7 @@ function Breakdown({ title, sub, weight }: { title: string; sub: SubScore; weigh
         </span>
       </div>
       <table className="w-full text-sm">
-        <tbody className="divide-y divide-zinc-100">
+        <tbody className="divide-y divide-zinc-200/50">
           {sub.components.map((c) => (
             <tr key={c.factor}>
               <td className="px-3 py-1.5 text-zinc-500">{c.factor}</td>
@@ -79,8 +79,8 @@ export function LeadDrawer({ row, weights, onClose }: { row: ScoredLead | null; 
   return (
     <div className="fixed inset-0 z-50" role="dialog" aria-modal="true" aria-labelledby="lead-drawer-title">
       <div className="absolute inset-0 bg-zinc-900/20" onClick={onClose} aria-hidden />
-      <aside className="absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-2xl border border-zinc-200 bg-white shadow-xl md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[480px] md:rounded-none md:border-y-0 md:border-r-0">
-        <header className="flex items-start justify-between gap-3 border-b border-zinc-200 px-5 py-4">
+      <aside className="absolute inset-x-0 bottom-0 flex max-h-[90vh] flex-col rounded-t-2xl bg-white shadow-xl md:inset-y-0 md:left-auto md:right-0 md:max-h-none md:w-[480px] md:rounded-none">
+        <header className="flex items-start justify-between gap-3 border-b border-zinc-100 px-6 py-5">
           <div className="min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h2 id="lead-drawer-title" className="font-mono text-base font-semibold text-zinc-900">
@@ -101,9 +101,9 @@ export function LeadDrawer({ row, weights, onClose }: { row: ScoredLead | null; 
           </button>
         </header>
 
-        <div className="flex-1 space-y-6 overflow-y-auto px-5 py-5">
+        <div className="flex-1 space-y-7 overflow-y-auto px-6 py-6">
           {score.override ? (
-            <div className="rounded-lg bg-indigo-50 px-3 py-2 text-sm text-indigo-800">{OVERRIDE_LABEL}.</div>
+            <div className="rounded-xl bg-emerald-50 px-3 py-2 text-sm text-emerald-900">{OVERRIDE_LABEL}.</div>
           ) : null}
           {holdout ? (
             <div className="rounded-lg bg-zinc-100 px-3 py-2 text-sm text-zinc-600">
@@ -128,7 +128,7 @@ export function LeadDrawer({ row, weights, onClose }: { row: ScoredLead | null; 
             <SectionLabel>Score breakdown</SectionLabel>
             <Breakdown title="Intent" sub={score.intent} weight={weights.intent} />
             <Breakdown title="App-failure likelihood" sub={score.appFailure} weight={weights.appFailure} />
-            <div className="rounded-lg bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700">
+            <div className="rounded-xl bg-zinc-50 px-3 py-2.5 text-sm text-zinc-700">
               <span className="tabular-nums">
                 {score.intent.total} × {weights.intent.toFixed(2)} + {score.appFailure.total} × {weights.appFailure.toFixed(2)} ={" "}
               </span>
@@ -152,7 +152,7 @@ export function LeadDrawer({ row, weights, onClose }: { row: ScoredLead | null; 
           {draft ? (
             <section className="space-y-2">
               <SectionLabel>{draft.channel}</SectionLabel>
-              <div className="flex gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
+              <div className="flex gap-3 rounded-xl bg-emerald-50/60 p-4">
                 {draft.channel === "Call opener" ? (
                   <Phone className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400" aria-hidden />
                 ) : (

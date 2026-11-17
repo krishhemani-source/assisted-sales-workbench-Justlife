@@ -15,8 +15,8 @@ export function ExperimentSimulator() {
 
   return (
     <div className="space-y-5">
-      <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
-        <span className="font-medium">Simulated results from editable assumptions.</span> Hypotheses to test, not claims. Not
+      <div className="rounded-xl bg-zinc-100 px-4 py-3 text-sm text-zinc-700">
+        <span className="font-semibold text-zinc-900">Simulated results from editable assumptions.</span> Hypotheses to test, not claims. Not
         observed data.
       </div>
 
@@ -33,8 +33,8 @@ export function ExperimentSimulator() {
               aria-selected={selected}
               onClick={() => setActiveId(e.id)}
               className={cn(
-                "flex items-start justify-between gap-3 rounded-xl border bg-white px-4 py-3 text-left transition-colors",
-                selected ? "border-zinc-900 ring-1 ring-zinc-900" : "border-zinc-200 hover:border-zinc-300",
+                "flex items-start justify-between gap-3 rounded-2xl bg-white px-4 py-3.5 text-left shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition",
+                selected ? "ring-2 ring-emerald-800" : "ring-1 ring-zinc-950/[0.06] hover:ring-zinc-300",
               )}
             >
               <span className="min-w-0">
@@ -46,7 +46,7 @@ export function ExperimentSimulator() {
               {verdict ? (
                 <span
                   className={cn(
-                    "shrink-0 rounded-md px-2 py-0.5 text-xs font-semibold ring-1 ring-inset",
+                    "shrink-0 rounded-full px-2.5 py-0.5 text-xs font-semibold ring-1 ring-inset",
                     VERDICT_STYLE[verdict].chip,
                   )}
                 >

@@ -1,137 +1,196 @@
 "use client";
 
+import { ArrowRight, ShieldQuestion } from "lucide-react";
 import { useState } from "react";
-import leadsJson from "@/data/leads.json";
-import { DEFAULT_THRESHOLDS, DEFAULT_WEIGHTS, SOURCE_LABELS, type LeadSource } from "@/lib/config";
-import { isInHoldout } from "@/lib/holdout";
-import { scoreLead, validThresholds, weightsFromIntentPct, type LeadScore } from "@/lib/scoring";
-import type { FinalAction, Lead, Thresholds } from "@/lib/types";
-import { LeadTable, type SortKey } from "./LeadTable";
+import { SOURCE_LABELS, type LeadSource } from "@/lib/config";
 import { LeadDrawer } from "./LeadDrawer";
+import { LeadTable, type SortKey } from "./LeadTable";
 import { MethodologyPanel } from "./MethodologyPanel";
-import { Card, InfoBox, Select, Stat } from "./ui";
-
-const LEADS = leadsJson as Lead[];
-
-/** Holdout is computed once from lead ids only, never from weights, thresholds, filters or sort. */
-const HOLDOUT_IDS: ReadonlySet<string> = new Set(LEADS.filter(isInHoldout).map((l) => l.id));
-const ELIGIBLE_COUNT = LEADS.filter((l) => l.lead_source !== "call_me_back").length;
-
-export interface ScoredLead {
-  lead: Lead;
-  score: LeadScore;
-  holdout: boolean;
-  finalAction: FinalAction;
-}
+import {
+  DEFAULT_INTENT_PCT,
+  ELIGIBLE_COUNT,
+  HIGH_INTENT_PCT,
+  HOLDOUT_IDS,
+  LEADS,
+  type ActionFilter,
+  type Scoring,
+  type ScoredLead,
+} from "./useScoring";
+import { Card, cn, Collapsible, Select } from "./ui";
 
 type SourceFilter = "all" | LeadSource;
-type ActionFilter = "all" | FinalAction;
 type HoldoutFilter = "all" | "holdout" | "treatable";
 
-export function LeadWorkbench() {
-  const [intentPct, setIntentPct] = useState(Math.round(DEFAULT_WEIGHTS.intent * 100));
-  const [thresholdDraft, setThresholdDraft] = useState({
-    agentCall: String(DEFAULT_THRESHOLDS.agentCall),
-    whatsapp: String(DEFAULT_THRESHOLDS.whatsapp),
-  });
-  const [lastValid, setLastValid] = useState<Thresholds>({ ...DEFAULT_THRESHOLDS });
+function StrategyToggle({
+  scoring,
+  changedOnly,
+  onChangedOnly,
+}: {
+  scoring: Scoring;
+  changedOnly: boolean;
+  onChangedOnly: (v: boolean) => void;
+}) {
+  const { intentPct, setIntentPct, callsAtDefault, callsAtHighIntent, scored } = scoring;
+  const mode = intentPct === HIGH_INTENT_PCT ? "high" : intentPct === DEFAULT_INTENT_PCT ? "default" : "custom";
+
+  const changed = scored.filter((r) => !r.holdout && r.finalAction !== r.baselineAction);
+  const gained = changed.filter((r) => r.finalAction === "AGENT_CALL");
+  const repeatGained = gained.filter((r) => r.lead.past_bookings >= 3);
+  const lost = changed.filter((r) => r.baselineAction === "AGENT_CALL");
+  const lostFirstTime = lost.filter((r) => r.lead.past_bookings === 0);
+  const currentCalls = scored.filter((r) => r.finalAction === "AGENT_CALL").length;
+
+  const options = [
+    { id: "high", label: "Call every high-intent lead", pct: HIGH_INTENT_PCT },
+    { id: "default", label: "Call where it changes the outcome", pct: DEFAULT_INTENT_PCT },
+  ] as const;
+
+  return (
+    <Card className="p-5 sm:p-6">
+      <div className="flex flex-col gap-5 lg:flex-row lg:items-center lg:justify-between">
+        <div className="min-w-0">
+          <div className="text-sm font-semibold text-zinc-900">Who should agents call?</div>
+          <div
+            role="radiogroup"
+            aria-label="Calling strategy"
+            className="mt-3 inline-flex w-full flex-col gap-1 rounded-xl bg-zinc-100 p-1 sm:w-auto sm:flex-row"
+          >
+            {options.map((o) => {
+              const active = mode === o.id;
+              return (
+                <button
+                  key={o.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={active}
+                  onClick={() => setIntentPct(o.pct)}
+                  className={cn(
+                    "rounded-lg px-4 py-2 text-sm font-medium transition",
+                    active ? "bg-emerald-800 text-white shadow-sm" : "text-zinc-600 hover:bg-white/70 hover:text-zinc-900",
+                  )}
+                >
+                  {o.label}
+                </button>
+              );
+            })}
+          </div>
+          {mode === "custom" ? (
+            <p className="mt-2 text-xs text-zinc-500">
+              Custom weights in use (intent {intentPct}% / app-failure {100 - intentPct}%).
+            </p>
+          ) : null}
+        </div>
+
+        <div className="flex items-center gap-3 lg:justify-end">
+          <div className="lg:text-right">
+            <div className="text-xs text-zinc-500">Agent calls</div>
+            {mode === "default" ? (
+              <>
+                <div className="mt-0.5 text-3xl font-semibold tabular-nums tracking-tight text-emerald-800">{callsAtDefault}</div>
+                <div className="text-[11px] text-zinc-500">→ {callsAtHighIntent} if you call every high-intent lead</div>
+              </>
+            ) : (
+              <>
+                <div className="mt-0.5 flex items-center gap-2 text-3xl font-semibold tabular-nums tracking-tight lg:justify-end">
+                  <span className="text-zinc-400">{callsAtDefault}</span>
+                  <ArrowRight className="h-5 w-5 text-zinc-300" aria-hidden />
+                  <span className="text-zinc-950">{currentCalls}</span>
+                </div>
+                <div className="text-[11px] text-zinc-500">before → after</div>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {changed.length > 0 ? (
+        <div className="mt-5 rounded-xl bg-amber-50 px-4 py-4 text-sm leading-relaxed text-amber-950">
+          <dl className="grid grid-cols-3 gap-3">
+            <div>
+              <dt className="text-xs text-amber-800">Gain a call</dt>
+              <dd className="text-xl font-semibold tabular-nums">+{gained.length}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-amber-800">Lose a call</dt>
+              <dd className="text-xl font-semibold tabular-nums">−{lost.length}</dd>
+            </div>
+            <div>
+              <dt className="text-xs text-amber-800">Action changed (any)</dt>
+              <dd className="text-xl font-semibold tabular-nums">{changed.length}</dd>
+            </div>
+          </dl>
+          <p className="mt-3">
+            Agent calls go from {callsAtDefault} to {currentCalls} ({callsAtDefault} + {gained.length} − {lost.length}). The other{" "}
+            {changed.length - gained.length - lost.length} changes are moves between WhatsApp and leave-to-app.{" "}
+            {gained.length > 0 && repeatGained.length / gained.length > 0.5 ? (
+              <>
+                The new calls are mostly repeat customers likely to book anyway: {repeatGained.length} of {gained.length} have 3+
+                past bookings.
+              </>
+            ) : gained.length > 0 ? (
+              <>
+                {repeatGained.length} of the {gained.length} new calls go to repeat customers with 3+ bookings.
+              </>
+            ) : null}
+            {lost.length > 0 ? (
+              <>
+                {" "}
+                {lost.length} {lost.length === 1 ? "loses its" : "lose their"} call ({lostFirstTime.length} of them first-time
+                customers).
+              </>
+            ) : null}
+          </p>
+          <button
+            type="button"
+            onClick={() => onChangedOnly(!changedOnly)}
+            className="mt-2 font-semibold text-amber-950 underline decoration-amber-400 underline-offset-2 hover:decoration-amber-700"
+          >
+            {changedOnly ? "Show all leads" : `Show the ${changed.length} leads whose action changed`}
+          </button>
+        </div>
+      ) : null}
+    </Card>
+  );
+}
+
+export function LeadWorkbench({ scoring }: { scoring: Scoring }) {
+  const { scored, actionFilter: action, setActionFilter: setAction } = scoring;
   const [source, setSource] = useState<SourceFilter>("all");
-  const [action, setAction] = useState<ActionFilter>("all");
   const [holdoutFilter, setHoldoutFilter] = useState<HoldoutFilter>("all");
   const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" }>({ key: "opportunity", dir: "desc" });
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [changedOnlyRaw, setChangedOnly] = useState(false);
+  const anyChanged = scored.some((r) => !r.holdout && r.finalAction !== r.baselineAction);
+  const changedOnly = changedOnlyRaw && anyChanged;
 
-  const parsedThresholds: Thresholds = {
-    agentCall: thresholdDraft.agentCall.trim() === "" ? NaN : Number(thresholdDraft.agentCall),
-    whatsapp: thresholdDraft.whatsapp.trim() === "" ? NaN : Number(thresholdDraft.whatsapp),
-  };
-  const thresholdsValid = validThresholds(parsedThresholds);
-  const thresholds = thresholdsValid ? parsedThresholds : lastValid;
-
-  const onThresholdChange = (key: keyof Thresholds, value: string) => {
-    const next = { ...thresholdDraft, [key]: value };
-    setThresholdDraft(next);
-    const parsed: Thresholds = {
-      agentCall: next.agentCall.trim() === "" ? NaN : Number(next.agentCall),
-      whatsapp: next.whatsapp.trim() === "" ? NaN : Number(next.whatsapp),
-    };
-    if (validThresholds(parsed)) setLastValid(parsed);
-  };
-
-  const resetDefaults = () => {
-    setIntentPct(Math.round(DEFAULT_WEIGHTS.intent * 100));
-    setThresholdDraft({ agentCall: String(DEFAULT_THRESHOLDS.agentCall), whatsapp: String(DEFAULT_THRESHOLDS.whatsapp) });
-    setLastValid({ ...DEFAULT_THRESHOLDS });
-  };
-
-  const weights = weightsFromIntentPct(intentPct);
-
-  // 60 leads: recomputing on every render is instant, so no memoisation needed.
-  const scored: ScoredLead[] = LEADS.map((lead) => {
-    const score = scoreLead(lead, weights, thresholds);
-    const holdout = HOLDOUT_IDS.has(lead.id);
-    return { lead, score, holdout, finalAction: holdout ? "HOLDOUT" : score.action };
-  });
-
-  const visible = (() => {
-    const rows = scored.filter(
+  const val = (r: ScoredLead) =>
+    sort.key === "intent" ? r.score.intent.total : sort.key === "appFailure" ? r.score.appFailure.total : r.score.opportunity;
+  const visible = scored
+    .filter(
       (r) =>
         (source === "all" || r.lead.lead_source === source) &&
         (action === "all" || r.finalAction === action) &&
-        (holdoutFilter === "all" || (holdoutFilter === "holdout" ? r.holdout : !r.holdout)),
-    );
-    const val = (r: ScoredLead) =>
-      sort.key === "intent" ? r.score.intent.total : sort.key === "appFailure" ? r.score.appFailure.total : r.score.opportunity;
-    return rows.sort((a, b) => {
+        (holdoutFilter === "all" || (holdoutFilter === "holdout" ? r.holdout : !r.holdout)) &&
+        (!changedOnly || (!r.holdout && r.finalAction !== r.baselineAction)),
+    )
+    .sort((a, b) => {
       const d = sort.dir === "desc" ? val(b) - val(a) : val(a) - val(b);
       return d !== 0 ? d : a.lead.id.localeCompare(b.lead.id);
     });
-  })();
 
-  const counts = visible.reduce(
-    (acc, r) => {
-      acc[r.finalAction]++;
-      return acc;
-    },
-    { AGENT_CALL: 0, WHATSAPP_NUDGE: 0, LEAVE_TO_APP: 0, HOLDOUT: 0 } as Record<FinalAction, number>,
-  );
+  const counts = { AGENT_CALL: 0, WHATSAPP_NUDGE: 0, LEAVE_TO_APP: 0, HOLDOUT: 0 };
+  for (const r of visible) counts[r.finalAction]++;
 
   const selected = scored.find((r) => r.lead.id === selectedId) ?? null;
-  const filtersActive = source !== "all" || action !== "all" || holdoutFilter !== "all";
+  const filtersActive = source !== "all" || action !== "all" || holdoutFilter !== "all" || changedOnly;
 
   return (
-    <div className="space-y-5">
-      <Card className="grid grid-cols-2 gap-x-6 gap-y-4 p-4 sm:grid-cols-4 sm:p-5">
-        <Stat label="Leads shown" value={visible.length} sub={`of ${LEADS.length}`} />
-        <Stat label="Agent call" value={counts.AGENT_CALL} />
-        <Stat label="WhatsApp nudge" value={counts.WHATSAPP_NUDGE} />
-        <Stat label="Leave to app" value={counts.LEAVE_TO_APP} sub={`+ ${counts.HOLDOUT} in holdout`} />
-      </Card>
+    <div className="space-y-4">
+      <StrategyToggle scoring={scoring} changedOnly={changedOnly} onChangedOnly={setChangedOnly} />
 
-      <InfoBox>
-        <p>
-          <span className="font-medium text-zinc-800">Two different control groups.</span> The{" "}
-          <span className="font-medium text-zinc-800">lead-level holdout</span> (≈20% of eligible leads, fixed by a hash of the
-          lead ID) is never contacted. It is a permanent baseline that tells us whether the assisted channel creates bookings at
-          all. <span className="font-medium text-zinc-800">Experiment control</span> groups are randomised inside each experiment
-          among non-holdout leads, and tell us whether one specific tactic beats the current process. Callback requests are never
-          held out.
-        </p>
-      </InfoBox>
-
-      <MethodologyPanel
-        intentPct={intentPct}
-        onIntentPct={setIntentPct}
-        thresholdDraft={thresholdDraft}
-        thresholdsValid={thresholdsValid}
-        appliedThresholds={thresholds}
-        onThreshold={onThresholdChange}
-        onReset={resetDefaults}
-      />
-
-      <Card>
-        <div className="flex flex-col gap-3 border-b border-zinc-200 p-4 sm:flex-row sm:items-end sm:justify-between sm:px-5">
-          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 sm:flex sm:gap-3">
+      <Card id="lead-table" className="scroll-mt-4 overflow-hidden">
+        <div className="flex flex-col gap-4 px-5 pb-4 pt-5 sm:px-6 lg:flex-row lg:items-end lg:justify-between">
+          <div className="grid grid-cols-1 gap-3 min-[420px]:grid-cols-3 lg:flex">
             <Select<SourceFilter>
               label="Source"
               value={source}
@@ -164,9 +223,10 @@ export function LeadWorkbench() {
               ]}
             />
           </div>
-          <div className="flex items-center justify-between gap-3 text-xs text-zinc-500 sm:justify-end">
-            <span>
-              Holdout: {HOLDOUT_IDS.size} of {ELIGIBLE_COUNT} eligible (≈20% target)
+          <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-xs text-zinc-500 lg:justify-end">
+            <span className="tabular-nums">
+              <span className="font-medium text-zinc-800">{visible.length}</span> of {LEADS.length} leads · {counts.AGENT_CALL}{" "}
+              call · {counts.WHATSAPP_NUDGE} WhatsApp · {counts.LEAVE_TO_APP} app · {counts.HOLDOUT} holdout
             </span>
             {filtersActive ? (
               <button
@@ -175,8 +235,9 @@ export function LeadWorkbench() {
                   setSource("all");
                   setAction("all");
                   setHoldoutFilter("all");
+                  setChangedOnly(false);
                 }}
-                className="rounded-md px-2 py-1 font-medium text-zinc-700 hover:bg-zinc-100"
+                className="rounded-md px-2 py-1 font-medium text-emerald-800 hover:bg-emerald-50"
               >
                 Clear filters
               </button>
@@ -192,12 +253,32 @@ export function LeadWorkbench() {
           onSelect={setSelectedId}
           selectedId={selectedId}
         />
-        <div className="border-t border-zinc-200 px-4 py-2.5 text-xs text-zinc-500 sm:px-5">
-          Synthetic data. Illustrative only. Click a lead for the score breakdown and suggested approach.
+        <div className="px-5 py-3 text-xs text-zinc-400 sm:px-6">
+          Synthetic data. Illustrative only. Click a lead for its score breakdown and suggested approach.
         </div>
       </Card>
 
-      <LeadDrawer row={selected} weights={weights} onClose={() => setSelectedId(null)} />
+      <Collapsible
+        title="Holdout vs experiment control"
+        subtitle={`${HOLDOUT_IDS.size} of ${ELIGIBLE_COUNT} eligible leads are held out (≈20% target)`}
+        icon={<ShieldQuestion className="h-4 w-4" />}
+      >
+        <div className="grid gap-4 text-sm leading-relaxed text-zinc-600 md:grid-cols-2">
+          <p>
+            <span className="font-medium text-zinc-900">Lead-level holdout.</span> About 20% of eligible leads, fixed by a hash of
+            the lead ID, are never contacted. They form a permanent baseline that shows whether the assisted channel creates
+            bookings at all. Weights, thresholds and filters never change who is held out. Callback requests are never held out.
+          </p>
+          <p>
+            <span className="font-medium text-zinc-900">Experiment control.</span> Inside each experiment, non-holdout leads are
+            randomised into treatment and control. That shows whether one specific tactic beats the current process.
+          </p>
+        </div>
+      </Collapsible>
+
+      <MethodologyPanel scoring={scoring} />
+
+      <LeadDrawer row={selected} weights={scoring.weights} onClose={() => setSelectedId(null)} />
     </div>
   );
 }

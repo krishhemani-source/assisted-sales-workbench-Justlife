@@ -1,6 +1,6 @@
 "use client";
 
-import { RotateCcw } from "lucide-react";
+import { RotateCcw, SlidersHorizontal } from "lucide-react";
 import {
   APPFAIL_BASKET_BANDS,
   APPFAIL_COMPLEXITY_POINTS,
@@ -13,7 +13,7 @@ import {
   SOURCE_LABELS,
   STAGE_LABELS,
 } from "@/lib/config";
-import type { Thresholds } from "@/lib/types";
+import type { Scoring } from "./useScoring";
 import { cn, Collapsible, SectionLabel } from "./ui";
 
 function PointTable({ title, rows }: { title: string; rows: [string, number][] }) {
@@ -79,37 +79,31 @@ function NumberField({
         aria-invalid={invalid}
         className={cn(
           "h-9 w-full rounded-lg border bg-white px-2.5 text-sm tabular-nums text-zinc-900 focus:outline-none focus:ring-2",
-          invalid ? "border-red-400 focus:ring-red-100" : "border-zinc-300 focus:border-zinc-500 focus:ring-zinc-200",
+          invalid ? "border-red-400 focus:ring-red-100" : "border-zinc-200 focus:border-emerald-700 focus:ring-emerald-100",
         )}
       />
     </label>
   );
 }
 
-export function MethodologyPanel({
-  intentPct,
-  onIntentPct,
-  thresholdDraft,
-  thresholdsValid,
-  appliedThresholds,
-  onThreshold,
-  onReset,
-}: {
-  intentPct: number;
-  onIntentPct: (v: number) => void;
-  thresholdDraft: { agentCall: string; whatsapp: string };
-  thresholdsValid: boolean;
-  appliedThresholds: Thresholds;
-  onThreshold: (k: keyof Thresholds, v: string) => void;
-  onReset: () => void;
-}) {
+export function MethodologyPanel({ scoring }: { scoring: Scoring }) {
+  const {
+    intentPct,
+    setIntentPct: onIntentPct,
+    thresholdDraft,
+    thresholdsValid,
+    thresholds: appliedThresholds,
+    onThreshold,
+    reset: onReset,
+  } = scoring;
   return (
     <Collapsible
-      title="How the score works"
-      subtitle={`Opportunity = Intent × ${intentPct}% + App-failure × ${100 - intentPct}%. Adjust weights and action bands here.`}
+      title="How the score works (advanced)"
+      subtitle={`Opportunity = Intent × ${intentPct}% + App-failure × ${100 - intentPct}%. Weights, action bands and point tables.`}
+      icon={<SlidersHorizontal className="h-4 w-4" />}
     >
       <div className="space-y-6">
-        <p className="rounded-lg bg-amber-50 px-3 py-2 text-sm text-amber-900">
+        <p className="rounded-xl bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
           A transparent, rule-based prioritisation hypothesis. Actual incremental uplift must be validated through randomised
           experiments.
         </p>
